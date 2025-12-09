@@ -1,0 +1,52 @@
+export type ThemeMode = "light" | "dark";
+
+export interface PingResult {
+    target: string;
+    rawOutput: string;
+    success: boolean;
+}
+
+export interface TracerouteResult {
+    target: string;
+    rawOutput: string;
+    success: boolean;
+}
+
+export type HostStatus = "up" | "down" | "unknown";
+
+export interface PortInfo {
+    port: number;
+    protocol: "tcp" | "udp";
+    state: "open" | "closed" | "filtered";
+    serviceName?: string;
+}
+
+export interface HostInfo {
+    ip: string;
+    hostname?: string;
+    status: HostStatus;
+    ports: PortInfo[];
+}
+
+export type ScanProfile = "quick" | "full" | "custom";
+
+export interface NetworkScanParams {
+    target: string; // IP, rango o hostname
+    profile: ScanProfile;
+    createdBy?: string; // opcional, para auditoría futura
+}
+
+export interface NetworkScanResult {
+    id: string;
+    startedAt: string;
+    finishedAt?: string;
+    durationMs?: number;
+    target: string;
+    profile: ScanProfile;
+    hosts: HostInfo[];
+    summary: {
+        totalHosts: number;
+        hostsUp: number;
+        totalOpenPorts: number;
+    };
+}

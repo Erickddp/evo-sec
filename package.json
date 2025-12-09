@@ -1,0 +1,22 @@
+{
+    "name": "evosec-monorepo",
+    "version": "0.0.0",
+    "private": true,
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
+    "scripts": {
+        "dev:web": "npm run dev --workspace=web",
+        "dev:api": "npm run dev --workspace=api",
+        "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
+        "build": "npm run build --workspaces"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2",
+        "typescript": "^5.2.2"
+    },
+    "engines": {
+        "node": ">=20"
+    }
+}
