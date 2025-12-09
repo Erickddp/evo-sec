@@ -1,4 +1,4 @@
-# EVOSEC - Security Platform - lap
+# EVOSEC - Security Platform 
 
 Monorepo for the EVOSEC security platform.---
 
