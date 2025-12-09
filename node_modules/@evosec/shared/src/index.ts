@@ -14,11 +14,22 @@ export interface TracerouteResult {
 
 export type HostStatus = "up" | "down" | "unknown";
 
+export type ScanProfile =
+    | "quick"        // Fast, top ports
+    | "full"         // Full ports on common hosts
+    | "deep"         // All ports + version + OS
+    | "aggressive"   // Nmap -A (OS + scripts + traceroute)
+    | "safe"         // Scripts NSE "safe" + version
+    | "custom";
+
 export interface PortInfo {
     port: number;
     protocol: "tcp" | "udp";
     state: "open" | "closed" | "filtered";
     serviceName?: string;
+    product?: string;      // ej. "Apache httpd"
+    version?: string;      // ej. "2.4.52"
+    extraInfo?: string;    // ej. "SSL-only"
 }
 
 export interface HostInfo {
@@ -26,9 +37,10 @@ export interface HostInfo {
     hostname?: string;
     status: HostStatus;
     ports: PortInfo[];
+    osName?: string;       // ej. "Linux 3.x"
+    osAccuracy?: number;   // ej. 93
+    osVendor?: string;     // opcional, si Nmap lo aporta
 }
-
-export type ScanProfile = "quick" | "full" | "custom";
 
 export interface NetworkScanParams {
     target: string; // IP, rango o hostname

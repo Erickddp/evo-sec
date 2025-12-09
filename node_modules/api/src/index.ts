@@ -1,4 +1,4 @@
-import Fastify, { FastifyInstance, FastifyRequest } from 'fastify';
+import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import { NetworkScanParams } from '@evosec/shared';
 import { runNetworkScan, runPing, runTraceroute } from './services/scanner';

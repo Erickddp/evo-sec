@@ -50,10 +50,19 @@ export function ScanForm({ onRunScan, isScanning }: ScanFormProps) {
                         disabled={isScanning}
                         className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
                     >
-                        <option value="quick">Quick Scan (Fast - Top 100 Ports)</option>
-                        <option value="full">Full Scan (All Ports - Slower)</option>
-                        <option value="custom">Custom (Standard)</option>
+                        <option value="quick">Quick Scan (Fast – Top Ports)</option>
+                        <option value="full">Full Scan (All Ports)</option>
+                        <option value="deep">Deep Scan (Ports + Version + OS)</option>
+                        <option value="aggressive">Aggressive Intelligence (Nmap -A)</option>
+                        <option value="safe">Safe Scripts Scan (NSE Safe)</option>
                     </select>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {profile === 'quick' && "Fastest scan, checks top 100 common ports."}
+                        {profile === 'full' && "Scans all 65535 TCP ports. Takes longer."}
+                        {profile === 'deep' && "Detects OS and service versions. Slower but detailed."}
+                        {profile === 'aggressive' && "Intense scan: OS, versions, scripts, and traceroute."}
+                        {profile === 'safe' && "Uses safe NSE scripts to detect vulnerabilities without crashing services."}
+                    </p>
                 </div>
 
                 <button

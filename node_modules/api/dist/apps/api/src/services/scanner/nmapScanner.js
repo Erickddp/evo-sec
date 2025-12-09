@@ -2,124 +2,98 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { XMLParser } from 'fast-xml-parser';
 import { randomUUID } from 'node:crypto';
-import { NetworkScanParams, NetworkScanResult, HostInfo, PortInfo } from '@evosec/shared';
 import { isAllowedTarget } from './validation';
-
 const execAsync = promisify(exec);
-
-export async function runNetworkScan(params: NetworkScanParams): Promise<NetworkScanResult> {
+export async function runNetworkScan(params) {
     const { target, profile } = params;
-
     // 1. Validation
     if (!isAllowedTarget(target)) {
         throw new Error(`Target '${target}' is not allowed. Only private networks and localhost are permitted.`);
     }
-
     const scanId = randomUUID();
     const startedAt = new Date();
-
     // 2. Build Nmap Command
-    let cmd: string;
-
+    let cmd;
     switch (profile) {
         case "quick":
             // Escaneo rápido: top ports
             cmd = `nmap -T4 -F -oX - ${target}`;
             break;
-
         case "full":
             // Todos los puertos TCP
             cmd = `nmap -T4 -p- -oX - ${target}`;
             break;
-
         case "deep":
             // Todos los puertos + versión + OS
             cmd = `nmap -T4 -p- -sV -O -oX - ${target}`;
             break;
-
         case "aggressive":
             // Perfil de pentest: OS + versiones + scripts + traceroute
             cmd = `nmap -A -T4 -oX - ${target}`;
             break;
-
         case "safe":
             // Scripts NSE seguros + versión
             cmd = `nmap -T4 -sV --script=safe -oX - ${target}`;
             break;
-
         default:
             // Default to quick
             cmd = `nmap -T4 -F -oX - ${target}`;
             break;
     }
-
     // Log command (simulating fastify log structure)
     console.log(JSON.stringify({ msg: "Executing Nmap scan", cmd, profile: params.profile, target }));
-
     try {
         // 3. Execute Nmap
         // Increase buffer for large outputs (deep/aggressive scans)
         const { stdout } = await execAsync(cmd, { maxBuffer: 1024 * 1024 * 20 }); // 20MB buffer
-
         if (!stdout) {
             throw new Error('Nmap produced no output');
         }
-
         // 4. Parse XML
         const parser = new XMLParser({
             ignoreAttributes: false,
             attributeNamePrefix: '',
             parseAttributeValue: true
         });
-
         // Explicitly cast to any to traverse the untyped XML structure
-        const result = parser.parse(stdout as string) as any;
-
+        const result = parser.parse(stdout);
         const nmapRun = result.nmaprun;
         if (!nmapRun) {
             throw new Error('Invalid Nmap XML output');
         }
-
         // 5. Map to NetworkScanResult
         const finishedAt = new Date();
         const durationMs = finishedAt.getTime() - startedAt.getTime();
-
         const rawHosts = nmapRun.host
             ? (Array.isArray(nmapRun.host) ? nmapRun.host : [nmapRun.host])
             : [];
-
-        const hosts: HostInfo[] = [];
+        const hosts = [];
         let totalOpenPorts = 0;
-
         for (const rawHost of rawHosts) {
             // Check status
             const state = rawHost.status?.state; // 'up', 'down'
-            if (state !== 'up') continue;
-
+            if (state !== 'up')
+                continue;
             // Addresses
             const addresses = Array.isArray(rawHost.address) ? rawHost.address : [rawHost.address];
-            const ipv4Addr = addresses.find((a: any) => a.addrtype === 'ipv4');
+            const ipv4Addr = addresses.find((a) => a.addrtype === 'ipv4');
             const ip = ipv4Addr ? ipv4Addr.addr : 'unknown';
-
             // Hostnames
-            let hostname: string | undefined = undefined;
+            let hostname = undefined;
             if (rawHost.hostnames && rawHost.hostnames.hostname) {
                 const names = Array.isArray(rawHost.hostnames.hostname) ? rawHost.hostnames.hostname : [rawHost.hostnames.hostname];
                 hostname = names[0]?.name;
             }
-
             // OS Detection
-            let osName: string | undefined;
-            let osAccuracy: number | undefined;
-            let osVendor: string | undefined;
-
+            let osName;
+            let osAccuracy;
+            let osVendor;
             if (rawHost.os && rawHost.os.osmatch) {
                 const matches = Array.isArray(rawHost.os.osmatch) ? rawHost.os.osmatch : [rawHost.os.osmatch];
                 const bestMatch = matches[0];
                 if (bestMatch) {
                     osName = bestMatch.name;
                     osAccuracy = typeof bestMatch.accuracy === 'number' ? bestMatch.accuracy : parseInt(bestMatch.accuracy, 10);
-
                     // Try to find vendor in osclass
                     if (bestMatch.osclass) {
                         const classes = Array.isArray(bestMatch.osclass) ? bestMatch.osclass : [bestMatch.osclass];
@@ -128,27 +102,22 @@ export async function runNetworkScan(params: NetworkScanParams): Promise<Network
                     }
                 }
             }
-
             // Ports
-            const ports: PortInfo[] = [];
+            const ports = [];
             if (rawHost.ports && rawHost.ports.port) {
                 const rawPorts = Array.isArray(rawHost.ports.port) ? rawHost.ports.port : [rawHost.ports.port];
-
                 for (const p of rawPorts) {
                     const portState = p.state?.state; // open, closed, filtered
                     const portNum = parseInt(p.portid, 10);
-                    const protocol = p.protocol as 'tcp' | 'udp';
+                    const protocol = p.protocol;
                     const service = p.service;
-
                     const serviceName = service?.name;
                     const product = service?.product;
                     const version = service?.version;
                     const extraInfo = service?.extrainfo;
-
                     if (portState === 'open') {
                         totalOpenPorts++;
                     }
-
                     ports.push({
                         port: portNum,
                         protocol: protocol || 'tcp',
@@ -160,7 +129,6 @@ export async function runNetworkScan(params: NetworkScanParams): Promise<Network
                     });
                 }
             }
-
             hosts.push({
                 ip,
                 hostname,
@@ -171,8 +139,7 @@ export async function runNetworkScan(params: NetworkScanParams): Promise<Network
                 osVendor
             });
         }
-
-        const scanResult: NetworkScanResult = {
+        const scanResult = {
             id: scanId,
             startedAt: startedAt.toISOString(),
             finishedAt: finishedAt.toISOString(),
@@ -186,12 +153,12 @@ export async function runNetworkScan(params: NetworkScanParams): Promise<Network
                 totalOpenPorts
             }
         };
-
         return scanResult;
-
-    } catch (error: any) {
+    }
+    catch (error) {
         console.error(`[Scanner] Error executing nmap: ${error.message}`);
-        if (error.stderr) console.error(`[Scanner] Stderr: ${error.stderr}`);
+        if (error.stderr)
+            console.error(`[Scanner] Stderr: ${error.stderr}`);
         throw new Error(`Scan failed: ${error.message}`);
     }
 }

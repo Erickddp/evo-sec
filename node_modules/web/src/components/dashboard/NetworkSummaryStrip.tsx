@@ -34,21 +34,67 @@ export function NetworkSummaryStrip({ scanResult }: NetworkSummaryStripProps) {
     ];
 
     return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            {stats.map((stat, i) => {
-                const Icon = stat.icon;
-                return (
-                    <div key={i} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 flex items-center gap-4">
-                        <div className={`p-2 rounded-full bg-gray-100 dark:bg-gray-700 ${stat.color}`}>
-                            <Icon className="w-6 h-6" />
+        <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                {stats.map((stat, i) => {
+                    const Icon = stat.icon;
+                    return (
+                        <div key={i} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 flex items-center gap-4">
+                            <div className={`p-2 rounded-full bg-gray-100 dark:bg-gray-700 ${stat.color}`}>
+                                <Icon className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{stat.label}</p>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{stat.label}</p>
-                            <p className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
+                    )
+                })}
+            </div>
+            {
+                scanResult && scanResult.hosts.some(h => h.osName) && (
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6 flex items-center gap-4">
+                        <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400">
+                            <Server className="w-6 h-6" />
+                        </div>
+                        <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">OS Detection</p>
+                            <div className="flex gap-4 mt-1">
+                                {(() => {
+                                    const counts = scanResult.hosts.reduce((acc, h) => {
+                                        if (!h.osName) return acc;
+                                        const lower = h.osName.toLowerCase();
+                                        if (lower.includes('linux')) acc.linux++;
+                                        else if (lower.includes('windows')) acc.windows++;
+                                        else acc.other++;
+                                        return acc;
+                                    }, { linux: 0, windows: 0, other: 0 });
+
+                                    return (
+                                        <>
+                                            {counts.linux > 0 && (
+                                                <span className="text-sm font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                                                    🐧 {counts.linux} Linux
+                                                </span>
+                                            )}
+                                            {counts.windows > 0 && (
+                                                <span className="text-sm font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                                                    🪟 {counts.windows} Windows
+                                                </span>
+                                            )}
+                                            {counts.other > 0 && (
+                                                <span className="text-sm font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                                                    ❓ {counts.other} Other
+                                                </span>
+                                            )}
+                                        </>
+                                    );
+                                })()}
+                            </div>
                         </div>
                     </div>
                 )
-            })}
-        </div>
+            }
+        </>
     );
 }

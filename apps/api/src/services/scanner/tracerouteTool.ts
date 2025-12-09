@@ -1,12 +1,12 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { TracerouteResult } from '@evosec/shared';
-import { isAllowedTarget } from './validation';
+import { isAllowedTargetForTools } from './validation';
 
 const execAsync = promisify(exec);
 
 export async function runTraceroute(target: string): Promise<TracerouteResult> {
-    if (!isAllowedTarget(target)) {
+    if (!isAllowedTargetForTools(target)) {
         throw new Error(`Target '${target}' is not allowed.`);
     }
 

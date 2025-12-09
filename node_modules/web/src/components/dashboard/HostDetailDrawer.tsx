@@ -52,6 +52,20 @@ export function HostDetailDrawer({ host, onClose }: HostDetailDrawerProps) {
                                     <span className="font-medium text-gray-900 dark:text-white">{host.ports.length} detected</span>
                                 </div>
                             </div>
+                            {host.osName && (
+                                <div className="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-lg border border-gray-100 dark:border-gray-700 col-span-2">
+                                    <span className="text-xs text-gray-500">Operating System</span>
+                                    <div className="flex flex-col mt-1">
+                                        <span className="font-medium text-gray-900 dark:text-white">
+                                            {host.osName}
+                                            {host.osAccuracy ? ` (${host.osAccuracy}%)` : ''}
+                                        </span>
+                                        {host.osVendor && (
+                                            <span className="text-xs text-gray-500">{host.osVendor}</span>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -66,6 +80,7 @@ export function HostDetailDrawer({ host, onClose }: HostDetailDrawerProps) {
                                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Proto</th>
                                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">State</th>
                                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Service</th>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Version/Info</th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -79,6 +94,18 @@ export function HostDetailDrawer({ host, onClose }: HostDetailDrawerProps) {
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">{port.serviceName || '-'}</td>
+                                                <td className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
+                                                    <div className="flex flex-col">
+                                                        {(port.product || port.version) && (
+                                                            <span>
+                                                                {port.product} {port.version}
+                                                            </span>
+                                                        )}
+                                                        {port.extraInfo && (
+                                                            <span className="text-xs text-gray-400">{port.extraInfo}</span>
+                                                        )}
+                                                    </div>
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>

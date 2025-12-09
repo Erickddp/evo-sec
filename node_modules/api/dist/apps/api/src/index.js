@@ -1,6 +1,6 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
-// import { runNetworkScan } from './services/scanner';
+import { runNetworkScan, runPing, runTraceroute } from './services/scanner';
 // Justification for Fastify:
 // I chose Fastify over Express because it offers significantly better performance (req/sec),
 // lower overhead, and built-in TypeScript support which aligns with our full TS stack.
@@ -10,7 +10,7 @@ const server = Fastify({
 });
 // Configure CORS
 server.register(cors, {
-    origin: '*', // For dev only. In prod, restrict this.
+    origin: '*', // For dev only
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
 });
 // Health check
@@ -23,12 +23,55 @@ server.get('/health', async (_request, _reply) => {
 });
 // Security Config Stub
 server.get('/config/security', async (_request, _reply) => {
-    // TODO: Load from env or DB
     return {
-        allowedScanRanges: ["192.168.0.0/24"],
+        allowedScanRanges: ["192.168.0.0/24", "10.0.0.0/8", "172.16.0.0/12"],
         maxConcurrentScans: 2,
         environment: "development"
     };
+});
+// --- Security Tools Endpoints ---
+// 1. Network Scan (Nmap)
+server.post('/scan/network', async (request, reply) => {
+    const { target, profile } = request.body || {};
+    if (!target || !profile) {
+        return reply.code(400).send({ error: true, message: "Missing 'target' or 'profile' in body" });
+    }
+    try {
+        const result = await runNetworkScan({ target, profile });
+        return result;
+    }
+    catch (error) {
+        server.log.error(error);
+        return reply.code(500).send({ error: true, message: error.message || 'Scan failed' });
+    }
+});
+// 2. Ping
+server.post('/tools/ping', async (request, reply) => {
+    const { target } = request.body || {};
+    if (!target) {
+        return reply.code(400).send({ error: true, message: "Missing 'target'" });
+    }
+    try {
+        const result = await runPing(target);
+        return result;
+    }
+    catch (error) {
+        return reply.code(400).send({ error: true, message: error.message });
+    }
+});
+// 3. Traceroute
+server.post('/tools/traceroute', async (request, reply) => {
+    const { target } = request.body || {};
+    if (!target) {
+        return reply.code(400).send({ error: true, message: "Missing 'target'" });
+    }
+    try {
+        const result = await runTraceroute(target);
+        return result;
+    }
+    catch (error) {
+        return reply.code(400).send({ error: true, message: error.message });
+    }
 });
 // Start server
 const start = async () => {

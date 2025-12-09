@@ -42,15 +42,33 @@ export function DashboardShell() {
 
     const handleRunScan = async (params: { target: string; profile: ScanProfile }) => {
         setIsScanning(true);
-        appendConsole({ type: 'command', message: `Starting ${params.profile} scan on ${params.target}...` });
+
+        let startMsg = '';
+        switch (params.profile) {
+            case 'quick': startMsg = `Quick: Starting quick scan on ${params.target}...`; break;
+            case 'full': startMsg = `Full: Starting full port scan on ${params.target}...`; break;
+            case 'deep': startMsg = `Deep: Starting deep scan (ports + version + OS) on ${params.target}...`; break;
+            case 'aggressive': startMsg = `Aggressive: Starting active intelligence scan (-A) on ${params.target}...`; break;
+            case 'safe': startMsg = `Safe: Starting safe NSE script scan on ${params.target}...`; break;
+            default: startMsg = `Starting ${params.profile} scan on ${params.target}...`; break;
+        }
+        appendConsole({ type: 'command', message: startMsg });
 
         try {
             const result = await apiClient.runNetworkScan(params);
             setLastScanResult(result);
-            appendConsole({
-                type: 'success',
-                message: `Scan finished in ${(result.durationMs! / 1000).toFixed(2)}s. Found ${result.summary.hostsUp} active hosts.`
-            });
+
+            if (result.hosts.length > 0) {
+                appendConsole({
+                    type: 'success',
+                    message: `Scan finished in ${(result.durationMs! / 1000).toFixed(2)} seconds. Found ${result.summary.hostsUp} active hosts and ${result.summary.totalOpenPorts} open ports.`
+                });
+            } else {
+                appendConsole({
+                    type: 'info',
+                    message: `Scan finished in ${(result.durationMs! / 1000).toFixed(2)} seconds. No active hosts found.`
+                });
+            }
         } catch (error: any) {
             appendConsole({ type: 'error', message: `Scan failed: ${error.message}` });
         } finally {
